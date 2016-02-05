@@ -9,6 +9,7 @@ use uuid::Uuid;
 use std::io::BufWriter;
 use std::io::prelude::*;
 use std::process::Command;
+use std::process;
 use std::path::{Path, PathBuf};
 use clap::{Arg, App};
 use std::fs::File;
@@ -61,31 +62,31 @@ fn main() {
 
     let logfile = String::from_utf8(output.stdout).unwrap();
 
+    if logfile.len() == 0 {
+        println!("Git error:");
+        println!("{:?}", String::from_utf8(output.stderr).unwrap());
+        process::exit(1);
+    }
+
     let mut diff_lines: Vec<String> = Vec::new();
     let mut file_path = PathBuf::new();
-    let mut should_write_file = false;
 
     let file_start_re = regex!(r"(diff --git .* )(b/.*)$");
-    let filter_re = regex!(r"\.cpp$|\.h$");
     let linefilter_re = regex!(r"^\+\s");
 
     for line in logfile.split('\n') {
         if let Some(captures) = file_start_re.captures(line) {
             // this is a diff line// this is a diff line
             // write the old file if existing
-            if diff_lines.len() > 0 && should_write_file {
+            if diff_lines.len() > 0 {
                 write_diff_file(&diff_lines, &file_path, &out_path);
             }
 
             // grab the filename from the line and make it absolute
-            let filename = &captures.at(2).unwrap()[2..];
-            should_write_file = filter_re.is_match(filename);
-            if should_write_file {
-                file_path = PathBuf::from(filename);
-            }
+            file_path = PathBuf::from(&captures.at(2).unwrap()[2..]);
             diff_lines.clear();
 
-        } else if should_write_file && linefilter_re.is_match(line) {
+        } else if linefilter_re.is_match(line) {
             diff_lines.push(line[1..].to_owned())
         }
     }
@@ -96,11 +97,12 @@ fn main() {
     if let Some(config_path) = matches.value_of("config") {
         println!("Running the linter on the new files");
         let output = Command::new("acpplinter")
-                 .current_dir(out_path)
-                 .arg(config_path)
-                 .output()
-                 .unwrap_or_else(|e| panic!("Cannot run acpplinter: {}", e));
+                         .arg(config_path)
+                         .arg(out_path)
+                         .output()
+                         .unwrap_or_else(|e| panic!("Cannot run acpplinter: {}", e));
 
         println!("{}", String::from_utf8(output.stdout).unwrap());
+        println!("{}", String::from_utf8(output.stderr).unwrap());
     }
 }
