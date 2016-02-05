@@ -48,12 +48,10 @@ fn main() {
                                .takes_value(true))
                       .get_matches();
 
-    let repo_path = PathBuf::from("C:/Users/tommaso/DEV/Minecraftpe");
     let mut out_path = std::env::temp_dir();
     out_path.push(Uuid::new_v4().to_simple_string());
 
     let output = Command::new("git")
-                     .current_dir(repo_path.clone())
                      .arg("diff")
                      .arg(matches.value_of("from").unwrap())
                      .arg(matches.value_of("to").unwrap())
@@ -69,7 +67,7 @@ fn main() {
 
     let file_start_re = regex!(r"(diff --git .* )(b/.*)$");
     let filter_re = regex!(r"\.cpp$|\.h$");
-    let linefilter_re = regex!(r"\+\s");
+    let linefilter_re = regex!(r"^\+\s");
 
     for line in logfile.split('\n') {
         if let Some(captures) = file_start_re.captures(line) {
