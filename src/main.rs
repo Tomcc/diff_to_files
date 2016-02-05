@@ -30,14 +30,9 @@ fn main() {
     let matches = App::new("Make files out of an arbitrary diff")
                       .version("0.1")
                       .about("Still pretty incomplete")
-                      .arg(Arg::with_name("from")
-                               .help("commit ID, tag or branch name for the starting point")
-                               .value_name("ID, tag or branch name")
-                               .takes_value(true)
-                               .required(true))
-                      .arg(Arg::with_name("to")
-                               .help("commit ID, tag or branch name for the base")
-                               .value_name("ID, tag or branch name")
+                      .arg(Arg::with_name("id_range")
+                               .help("A git object range, in any of the forms allowed by git. For example, commit...commit, commit..branch, branch...tag and so on.")
+                               .value_name("Git ID range")
                                .takes_value(true)
                                .required(true))
                       .arg(Arg::with_name("config")
@@ -54,11 +49,9 @@ fn main() {
 
     let output = Command::new("git")
                      .arg("diff")
-                     .arg(matches.value_of("from").unwrap())
-                     .arg(matches.value_of("to").unwrap())
+                     .arg(matches.value_of("id_range").unwrap())
                      .output()
                      .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
-
 
     let logfile = String::from_utf8(output.stdout).unwrap();
 
