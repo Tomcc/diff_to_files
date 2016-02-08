@@ -82,7 +82,7 @@ fn main() {
     let mut commit = String::new();
 
     let file_start_re = regex!(r"(diff --git .* )(b/.*)$");
-    let linefilter_re = regex!(r"^\+\s");
+    let linefilter_re = regex!(r"^\+[^\+]");
     let commit_start_re = regex!(r"^commit ([0-9a-f]{40,40})$");
 
     for line in logfile.split('\n') {
