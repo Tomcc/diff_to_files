@@ -124,7 +124,8 @@ fn main() {
 
     let file_start_re = regex!(r"(diff --git .* )(b/.*)$");
     let linefilter_re = regex!(r"^\+[^\+]");
-    let line_info_re = regex!(r"^@@.*?,.*?\+([0-9]+)");
+    let line_info_re = regex!(r"^@@.*?\+([0-9]+)");
+    let plus = "+".to_string();
     let mut current_line = 0;
 
     for line in logfile.split('\n') {
@@ -140,7 +141,7 @@ fn main() {
             // grab the filename from the line and make it absolute
             file_path = PathBuf::from(&captures.at(2).unwrap()[2..]);
             diff_lines.clear();
-        } else if linefilter_re.is_match(line) {
+        } else if linefilter_re.is_match(line) || line == plus {
             diff_lines.push(Line::from_line_number(&line[1..], current_line));
             current_line += 1;
         }
