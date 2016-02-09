@@ -61,6 +61,11 @@ fn write_diff_file(diffs: &Vec<Line>, path: &Path, root: &Path) {
     let mut diff_line_idx = 0;
     for blame_line in blame(path).split('\n') {
         blame_line_idx += 1;
+
+        if blame_line.len() == 0 {
+            continue;
+        }
+
         //check if this line is in the diff
         let diff_line = &diffs[diff_line_idx];
         if blame_line_idx == diff_line.id {
