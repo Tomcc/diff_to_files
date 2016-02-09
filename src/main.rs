@@ -14,19 +14,6 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, App};
 use std::fs::File;
 
-fn to_short_rev(commit: &str) -> String {
-    let output = Command::new("git")
-                     .arg("rev-parse")
-                     .arg("--short")
-                     .arg(commit)
-                     .output()
-                     .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
-
-    let mut rev = String::from_utf8(output.stdout).unwrap();
-    rev.pop();
-    rev
-}
-
 fn write_diff_file(lines: &Vec<String>, path: &Path, root: &Path) {
     let mut abspath = PathBuf::from(root);
     abspath.push(path);
@@ -63,8 +50,7 @@ fn main() {
     out_path.push(Uuid::new_v4().to_simple_string());
 
     let output = Command::new("git")
-                     .arg("log")
-                     .arg("-p")
+                     .arg("diff")
                      .arg(matches.value_of("id_range").unwrap())
                      .output()
                      .unwrap_or_else(|e| panic!("failed to execute process: {}", e));
@@ -79,17 +65,12 @@ fn main() {
 
     let mut diff_lines: Vec<String> = Vec::new();
     let mut file_path = PathBuf::new();
-    let mut commit = String::new();
 
     let file_start_re = regex!(r"(diff --git .* )(b/.*)$");
     let linefilter_re = regex!(r"^\+[^\+]");
-    let commit_start_re = regex!(r"^commit ([0-9a-f]{40,40})$");
 
     for line in logfile.split('\n') {
-        if let Some(captures) = commit_start_re.captures(line) {
-            commit = to_short_rev(captures.at(1).unwrap());
-        }
-        else if let Some(captures) = file_start_re.captures(line) {
+        if let Some(captures) = file_start_re.captures(line) {
             // this is a diff line// this is a diff line
             // write the old file if existing
             if diff_lines.len() > 0 {
@@ -100,7 +81,7 @@ fn main() {
             file_path = PathBuf::from(&captures.at(2).unwrap()[2..]);
             diff_lines.clear();
         } else if linefilter_re.is_match(line) {
-            diff_lines.push(commit.clone() + "\t" + &line[1..])
+            diff_lines.push(line[1..].to_owned())
         }
     }
 
